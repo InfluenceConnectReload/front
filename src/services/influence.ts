@@ -55,8 +55,10 @@ const changeInfluencerStatus = async (id: number, status: string) => {
 
 // Função para atualizar um influenciador
 const updateInfluencer = async (id: number, influencer: Influencer) => {
+  
   try {
     const res = await api.put(`/influencers/${id}`, influencer);
+    console.log(res);
     return res.data;
   } catch (error) {
     console.log(`Error updating influencer with id ${id}: ${error}`);
