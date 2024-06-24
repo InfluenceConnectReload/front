@@ -9,6 +9,11 @@ interface Influencer {
   status: string; 
   influencerCampaigns?: Campaign[]; 
   influencerSocialMedia?: SocialMedia[];
+  birthdate?: string,
+  email? :string,
+  cpf?:string,
+  stateId: number,
+  nicheIds: number[]
 }
 export default Influencer;
 

@@ -15,10 +15,12 @@ import {
   Select,
   Avatar,
 } from "@mui/material";
-import { Facebook, Instagram, YouTube, Twitter, Search } from "@mui/icons-material";
-import { useNavigate } from "react-router-dom";
+import { Facebook, Instagram, YouTube, Twitter, Search, MusicNoteOutlined } from "@mui/icons-material";
+import { useLocation, useNavigate } from "react-router-dom";
 import { IMaskInput } from "react-imask";
 import { states } from "../../data/states"; // Importa lista de estados
+import Influencer from "../../types/influencer";
+import formatSocialMedia from "../../utils/socialMediaFormatter";
 
 
 const niches = [
@@ -46,24 +48,34 @@ const niches = [
 
 const UpdateInfluencer = () => {
   const navigate = useNavigate();
+
+  //Pega parametro de outro lugar, Valores já armazenados no banco de dados
+  const p= useLocation()
+  const inf = p.state.influencer as Influencer??{} as Influencer;
+  const photo= inf.profilePhoto;
+  const socialMediaFormatted = formatSocialMedia(inf.influencerSocialMedia??[]);
+  const previousNiches = inf.nicheIds.map((id)=> niches[id-1].name) //-1 porque o banco começa de 1 
+
+  //States
   const [loading, setLoading] = useState(false);
   const [loadingImage] = useState(false);
-  const [preview, setPreview] = useState<string | undefined>(undefined);
+  const [preview, setPreview] = useState<string | undefined>(photo);
   const [socialMedia, setSocialMedia] = useState({
-    facebook: "",
-    instagram: "",
-    youtube: "",
-    twitter: "",
+    facebook: socialMediaFormatted.facebook,
+    instagram: socialMediaFormatted.instagram,
+    youtube: socialMediaFormatted.youtube,
+    twitter: socialMediaFormatted.twitter,
+    tiktok: socialMediaFormatted.tiktok
   });
-  const [selectedNiches, setSelectedNiches] = useState<string[]>([]);
-  const [state, setState] = useState<string>("");
-  const [birthdate, setBirthdate] = useState<string>("");
-  const [name, setName] = useState<string>("");
-  const [email, setEmail] = useState<string>("");
-  const [cpf, setCpf] = useState<string>("");
+  const [selectedNiches, setSelectedNiches] = useState<string[]>(previousNiches);
+  const [state, setState] = useState<string>(states[inf.stateId -1]); //-1 porque o banco começa de 1 e o array começa de 0
+  const [birthdate, setBirthdate] = useState<string>(inf.birthdate??"");
+  const [name, setName] = useState<string>(inf.name??"");
+  const [email, setEmail] = useState<string>(inf.email??"");
+  const [cpf, setCpf] = useState<string>(inf.cpf??"");
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
-
+  
   const handleChange = (
     event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
@@ -72,7 +84,8 @@ const UpdateInfluencer = () => {
       name === "facebook" ||
       name === "instagram" ||
       name === "youtube" ||
-      name === "twitter"
+      name === "twitter" ||
+      name === "tiktok"
     ) {
       setSocialMedia({ ...socialMedia, [name]: value });
     } else if (name === "state") {
@@ -328,6 +341,23 @@ const UpdateInfluencer = () => {
                   startAdornment: (
                     <InputAdornment position="start">
                       <Twitter />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                id="tiktok"
+                name="tiktok"
+                label="Tiktok"
+                value={socialMedia.tiktok}
+                onChange={handleChange}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <MusicNoteOutlined />
                     </InputAdornment>
                   ),
                 }}
