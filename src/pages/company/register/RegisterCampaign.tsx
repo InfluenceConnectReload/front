@@ -155,7 +155,7 @@ export default function RegisterCampaign() {
       (smName) => socialMediaOrderSwapped[smName]
     ),
     status: statusBackend[status] as StatusBackend,
-    budget: Number(budget.replace("R$", "").replace(",", ".")),
+    budget: Number(budget.replace("R$", "").replace(".","").replace(",", ".")),
     expecLikes: Number(likes),
     expecComments: Number(comments),
     expecSaves: Number(shares),
