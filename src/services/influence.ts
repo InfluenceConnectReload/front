@@ -86,6 +86,17 @@ const getActivesInfluencers = async () => {
   }
 };
 
+const getPageableInfluencersByTerm = async(term: string, page: number, pageSize: number) =>{
+
+  try {
+    const res = await api.get(`influencers/pageable/${term}?page=${page}&pageSize=${pageSize}`);
+    return res;
+  } catch (error) {
+    console.error("Error getPageableInfluencersByTerm: " + error);
+    return null;
+  }
+}
+
 export {
   updateInfluencer,
   getInfluencerById,
@@ -95,4 +106,5 @@ export {
   desactiveInfluencer,
   activeInfluencer,
   getActivesInfluencers,
+  getPageableInfluencersByTerm
 };
