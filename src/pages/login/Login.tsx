@@ -98,16 +98,27 @@ export default function LoginPage() {
         userLoginType == "influencer"
           ? resLogin.user.influencer.status
           : resLogin.user.company?.status;
-      
+      let tableId =
+        userLoginType == "influencer"
+          ? resLogin.user.influencer.id
+          : resLogin.user.company?.id;
+
+      if (userLoginType == "adm") {
+        tableId = 1; //essa parte do código precisa mudar, mas depende de backend
+        //pois o back não retorna o id do adm na tabela,
+        //como só temos 1 adm, estou assumindo que ele receba o valor de id 1
+      }
+
       const userData: UserData = {
         id: Number(resLogin.user.id),
         name: resLogin.user.name,
         userType: actualUserType as usersType,
         profilePhoto: photo,
         status: status,
+        tableId: tableId,
       };
 
-      sessionCtx.setUserData(userData)
+      sessionCtx.setUserData(userData);
       if (rememberCheckboxChecked) setUserLocalStorage(userData);
       else setUserSessionStorage(userData);
 
@@ -126,18 +137,18 @@ export default function LoginPage() {
     navigate("/Register");
   };
   // Após a declaração dos estados locais
-const { mode } = useParams();
+  const { mode } = useParams();
 
-React.useEffect(() => {
-  if (mode == "registered") {
-    setAlertMessage("😎 Cadastrado com sucesso");
-    setOpenSnackbar(true);
-  } else if (mode == "registerError") {
-    setAlertMessage("☹️ Erro ao cadastrar, tente mais tarde!");
-    setAlertSeverity("error");
-    setOpenSnackbar(true);
-  }
-}, []);
+  React.useEffect(() => {
+    if (mode == "registered") {
+      setAlertMessage("😎 Cadastrado com sucesso");
+      setOpenSnackbar(true);
+    } else if (mode == "registerError") {
+      setAlertMessage("☹️ Erro ao cadastrar, tente mais tarde!");
+      setAlertSeverity("error");
+      setOpenSnackbar(true);
+    }
+  }, []);
   //Renderizando o componente
   return (
     <Grid

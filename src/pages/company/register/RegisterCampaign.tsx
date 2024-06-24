@@ -137,7 +137,7 @@ export default function RegisterCampaign() {
     likes: false,
     comments: false,
     shares: false,
-    company: false
+    company: false,
   });
   const [attemptedSubmit, setAttemptedSubmit] = useState(false);
 
@@ -180,6 +180,18 @@ export default function RegisterCampaign() {
 
     setAllInfluencers();
     setAllCompanies();
+
+    if (sessionCtx.userType == "company") {
+      const cData = sessionCtx.userData;
+      const company: Company = {
+        name: cData.name,
+        id: cData.tableId,
+        image: cData.profilePhoto ?? "",
+        profileLogo: cData.profilePhoto,
+        status: "ACTIVE"
+      };
+      setSelectedCompany(company);
+    }
   }, []);
 
   // const theme = useTheme();
@@ -337,7 +349,7 @@ export default function RegisterCampaign() {
       likes: !likes,
       comments: !comments,
       shares: !shares,
-      company: selectedCompany.id == null
+      company: selectedCompany.id == null,
     };
 
     setErrors(newErrors);
