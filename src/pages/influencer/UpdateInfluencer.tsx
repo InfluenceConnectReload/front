@@ -15,11 +15,21 @@ import {
   Select,
   Avatar,
 } from "@mui/material";
-import { Facebook, Instagram, YouTube, Twitter, Search } from "@mui/icons-material";
-import { useNavigate } from "react-router-dom";
+import {
+  Facebook,
+  Instagram,
+  YouTube,
+  Twitter,
+  Search,
+  MusicNoteOutlined,
+} from "@mui/icons-material";
+import { useLocation, useNavigate } from "react-router-dom";
 import { IMaskInput } from "react-imask";
 import { states } from "../../data/states"; // Importa lista de estados
-
+import Influencer, { SocialMedia } from "../../types/influencer";
+import formatSocialMedia from "../../utils/socialMediaFormatter";
+import { socialMediaOrderSwapped } from "../../utils/socialMediaOrder";
+import { updateInfluencer } from "../../services/influence";
 
 const niches = [
   { name: "tecnologia", label: "Tecnologia" },
@@ -46,33 +56,69 @@ const niches = [
 
 const UpdateInfluencer = () => {
   const navigate = useNavigate();
+
+  //Pega parametro de outro lugar, Valores já armazenados no banco de dados
+  const p = useLocation();
+  const inf = (p.state.influencer as Influencer) ?? ({} as Influencer);
+  const photo = inf.profilePhoto;
+  const socialMediaFormatted = formatSocialMedia(inf.influencerSocialMedia ?? []);
+  const previousNiches = inf.nicheIds.map((id) => niches[id - 1].name); //-1 porque o banco começa de 1
+
+  //States
   const [loading, setLoading] = useState(false);
   const [loadingImage] = useState(false);
-  const [preview, setPreview] = useState<string | undefined>(undefined);
+  const [preview, setPreview] = useState<string | undefined>(photo);
   const [socialMedia, setSocialMedia] = useState({
-    facebook: "",
-    instagram: "",
-    youtube: "",
-    twitter: "",
+    facebook: socialMediaFormatted.facebook,
+    instagram: socialMediaFormatted.instagram,
+    youtube: socialMediaFormatted.youtube,
+    twitter: socialMediaFormatted.twitter,
+    tiktok: socialMediaFormatted.tiktok,
   });
-  const [selectedNiches, setSelectedNiches] = useState<string[]>([]);
-  const [state, setState] = useState<string>("");
-  const [birthdate, setBirthdate] = useState<string>("");
-  const [name, setName] = useState<string>("");
-  const [email, setEmail] = useState<string>("");
-  const [cpf, setCpf] = useState<string>("");
+  const [selectedNiches, setSelectedNiches] = useState<string[]>(previousNiches);
+  const [state, setState] = useState<string>(states[inf.stateId - 1]); //-1 porque o banco começa de 1 e o array começa de 0
+  const [birthdate, setBirthdate] = useState<string>(inf.birthdate ?? "");
+  const [name, setName] = useState<string>(inf.name ?? "");
+  const [email, setEmail] = useState<string>(inf.email ?? "");
+  const [cpf, setCpf] = useState<string>(inf.cpf ?? "");
+
+  const influencerToSend: Influencer = {
+    id: inf.id,
+    name: name,
+    email: email,
+    birthdate: birthdate,
+    cpf: cpf,
+    image: "",
+    profilePhoto: preview,
+    stateId: states.indexOf(state) + 1,
+    //@ts-ignore
+    nicheIds: niches.map((niche, index) => (selectedNiches.includes(niche.name) ? index + 1 : undefined))
+                    .filter(index => index !== undefined),
+
+    //@ts-ignore
+    influencerSocialMedia: Object.keys(socialMedia)
+    .map((key) => {
+      //@ts-ignore
+      if (socialMedia[key] != "")
+        //@ts-ignore
+        return {socialMediaId: socialMediaOrderSwapped[key],link: socialMedia[key],
+        } as SocialMedia;
+      else
+        return undefined
+    })
+    .filter((element) => element != undefined)??{}  as SocialMedia[],
+  };
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
-  const handleChange = (
-    event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
+  const handleChange = (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = event.target;
     if (
       name === "facebook" ||
       name === "instagram" ||
       name === "youtube" ||
-      name === "twitter"
+      name === "twitter" ||
+      name === "tiktok"
     ) {
       setSocialMedia({ ...socialMedia, [name]: value });
     } else if (name === "state") {
@@ -88,9 +134,7 @@ const UpdateInfluencer = () => {
     }
   };
 
-  const handleAvatarChange = (
-    event: ChangeEvent<HTMLInputElement>
-  ) => {
+  const handleAvatarChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       // Mostrar prévia da imagem selecionada
@@ -102,7 +146,7 @@ const UpdateInfluencer = () => {
     }
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async(event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoading(true);
 
@@ -112,18 +156,27 @@ const UpdateInfluencer = () => {
       setLoading(false);
       return;
     }
-
-    //  envio de dados
-    setTimeout(() => {
-      setLoading(false);
-      navigate("/profile"); // Redireciona para a página de perfil
-    }, 2000); // tempo de carregamento
+    console.log(influencerToSend);
+    await updateInfluencer(inf.id, influencerToSend);
+    setLoading(false);
   };
 
   return (
     <Container component="main" maxWidth="md">
-      <Box sx={{ marginTop: 8, display: "flex", flexDirection: "column", alignItems: "center" }}>
-        <Typography component="h1" variant="h4" fontWeight="bold" sx={{ display: "flex", alignItems: "center" }}>
+      <Box
+        sx={{
+          marginTop: 8,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+        }}
+      >
+        <Typography
+          component="h1"
+          variant="h4"
+          fontWeight="bold"
+          sx={{ display: "flex", alignItems: "center" }}
+        >
           <Search sx={{ mr: 1 }} /> Editar Perfil
         </Typography>
         <Box component="form" onSubmit={handleSubmit} sx={{ mt: 3, width: "100%" }}>
@@ -141,9 +194,9 @@ const UpdateInfluencer = () => {
               <label
                 htmlFor="profilePicture"
                 style={{
-                  display: "flex", /* Torna o label um container flexível */
-                  justifyContent: "center", /* Centraliza o conteúdo horizontalmente */
-                  textAlign: "center" /* Alinha o texto centralmente */
+                  display: "flex" /* Torna o label um container flexível */,
+                  justifyContent: "center" /* Centraliza o conteúdo horizontalmente */,
+                  textAlign: "center" /* Alinha o texto centralmente */,
                 }}
               >
                 {loadingImage ? (
@@ -189,24 +242,24 @@ const UpdateInfluencer = () => {
             </Grid>
             {/* Estado */}
             <Grid item xs={12}>
-                  <FormControl fullWidth required>
-                    <InputLabel id="state-label">Estado</InputLabel>
-                    <Select
-                      labelId="state-label"
-                      id="state"
-                      name="state"
-                      value={state}
-                      onChange={(e) => setState(e.target.value as string)}
-                      label="Estado"
-                    >
-                      {states.map((state) => (
-                        <MenuItem key={state} value={state}>
-                          {state}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
+              <FormControl fullWidth required>
+                <InputLabel id="state-label">Estado</InputLabel>
+                <Select
+                  labelId="state-label"
+                  id="state"
+                  name="state"
+                  value={state}
+                  onChange={(e) => setState(e.target.value as string)}
+                  label="Estado"
+                >
+                  {states.map((state) => (
+                    <MenuItem key={state} value={state}>
+                      {state}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
             {/* Data de Nascimento */}
             <Grid item xs={12}>
               <TextField
@@ -333,6 +386,23 @@ const UpdateInfluencer = () => {
                 }}
               />
             </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                id="tiktok"
+                name="tiktok"
+                label="Tiktok"
+                value={socialMedia.tiktok}
+                onChange={handleChange}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <MusicNoteOutlined />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Grid>
             {/* Botão de Submissão */}
             <Grid item xs={12}>
               <Button
@@ -343,7 +413,17 @@ const UpdateInfluencer = () => {
                 color="primary"
                 disabled={loading}
               >
-                {loading && <CircularProgress size={24} sx={{ position: "absolute", left: "50%", marginTop: -12, marginLeft: -12 }} />}
+                {loading && (
+                  <CircularProgress
+                    size={24}
+                    sx={{
+                      position: "absolute",
+                      left: "50%",
+                      marginTop: -12,
+                      marginLeft: -12,
+                    }}
+                  />
+                )}
                 Finalizar Edição
               </Button>
             </Grid>
@@ -359,11 +439,11 @@ interface TextMaskCustomProps {
   inputRef: React.Ref<HTMLInputElement>;
 }
 
-const CPFMaskCustom = React.forwardRef<HTMLInputElement, TextMaskCustomProps>((props, ref) => {
-  const { ...other } = props;
-  return <IMaskInput {...other} mask="000.000.000-00" inputRef={ref} />;
-});
+const CPFMaskCustom = React.forwardRef<HTMLInputElement, TextMaskCustomProps>(
+  (props, ref) => {
+    const { ...other } = props;
+    return <IMaskInput {...other} mask="000.000.000-00" inputRef={ref} />;
+  }
+);
 
 export default UpdateInfluencer;
-
-

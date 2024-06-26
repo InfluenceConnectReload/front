@@ -24,6 +24,7 @@ import { activeInfluencer, desactiveInfluencer } from "../../services/influence"
 import Campaign from "../../types/campaign";
 import { addInfluencerToCampaign } from "../../services/campaign";
 import formatSocialMedia from "../../utils/socialMediaFormatter";
+import { useNavigate } from "react-router-dom";
 
 // Interface que define as propriedades do modal de detalhes do influenciador
 interface InfluencerDetailModalProps {
@@ -71,6 +72,9 @@ const InfluencerDetailModal: React.FC<InfluencerDetailModalProps> = ({
 }) => {
   // Se não houver influenciador selecionado, retorna null
   if (!influencer) return null;
+
+  //Navigador entre página
+  const navigate = useNavigate();
 
   // Obtenção do tipo de usuário do contexto da sessão
   const { userType } = useSessionContext();
@@ -122,7 +126,8 @@ const InfluencerDetailModal: React.FC<InfluencerDetailModalProps> = ({
 
         {/* Lista de campanhas do influenciador */}
         <Stack>
-          {(influencer.influencerCampaigns?.length != 0 && influencer.status != "INACTIVE") ? (
+          {influencer.influencerCampaigns?.length != 0 &&
+          influencer.status != "INACTIVE" ? (
             <Stack direction={"row"} spacing={1}>
               <Typography variant="body2" color="text.secondary">
                 Campanhas:
@@ -210,7 +215,14 @@ const InfluencerDetailModal: React.FC<InfluencerDetailModalProps> = ({
           <Stack spacing={1} direction={"row"}>
             {userType == "adm" ? (
               <>
-                <Button variant="contained">Editar</Button>
+                <Button
+                  variant="contained"
+                  onClick={() =>
+                    navigate("/updateInfluencer", { state: { influencer: influencer } })
+                  }
+                >
+                  Editar
+                </Button>
                 {influencer.status == "ACTIVE" ? (
                   <Button
                     variant="outlined"

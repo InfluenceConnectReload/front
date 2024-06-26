@@ -55,8 +55,10 @@ const changeInfluencerStatus = async (id: number, status: string) => {
 
 // Função para atualizar um influenciador
 const updateInfluencer = async (id: number, influencer: Influencer) => {
+  
   try {
     const res = await api.put(`/influencers/${id}`, influencer);
+    console.log(res);
     return res.data;
   } catch (error) {
     console.log(`Error updating influencer with id ${id}: ${error}`);
@@ -84,6 +86,17 @@ const getActivesInfluencers = async () => {
   }
 };
 
+const getPageableInfluencersByTerm = async(term: string, page: number, pageSize: number) =>{
+
+  try {
+    const res = await api.get(`influencers/pageable/${term}?page=${page}&pageSize=${pageSize}`);
+    return res;
+  } catch (error) {
+    console.error("Error getPageableInfluencersByTerm: " + error);
+    return null;
+  }
+}
+
 export {
   updateInfluencer,
   getInfluencerById,
@@ -93,4 +106,5 @@ export {
   desactiveInfluencer,
   activeInfluencer,
   getActivesInfluencers,
+  getPageableInfluencersByTerm
 };

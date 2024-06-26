@@ -21,6 +21,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import {
   getAllInfluencersPageable,
   getNumbersOfInfluencers,
+  getPageableInfluencersByTerm,
 } from "../../services/influence";
 import numberOfPages from "../../utils/numbersOfPages";
 import InfluencerDetailModal from "./InfluencerDetailModal";
@@ -29,15 +30,15 @@ import { getAllCampaign } from "../../services/campaign";
 import Campaign from "../../types/campaign";
 
 const mockDefaultInfluencers: Influencer[] = [
-  { id: 1, name: "Influenciador 1", image: "/static/images/cards/image1.jpg", status: "" },
-  { id: 2, name: "Influenciador 2", image: "/static/images/cards/image2.jpg", status: "" },
-  { id: 3, name: "Influenciador 3", image: "/static/images/cards/image3.jpg", status: "" },
-  { id: 4, name: "Influenciador 4", image: "/static/images/cards/image4.jpg", status: "" },
-  { id: 5, name: "Influenciador 5", image: "/static/images/cards/image5.jpg", status: "" },
-  { id: 6, name: "Influenciador 6", image: "/static/images/cards/image6.jpg", status: "" },
-  { id: 7, name: "Influenciador 7", image: "/static/images/cards/image7.jpg", status: "" },
-  { id: 8, name: "Influenciador 8", image: "/static/images/cards/image8.jpg", status: "" },
-  { id: 9, name: "Influenciador 9", image: "/static/images/cards/image9.jpg", status: "" },
+  { id: 1, name: "Influenciador 1", image: "/static/images/cards/image1.jpg", status: "", nicheIds: [], stateId: 0},
+  { id: 2, name: "Influenciador 2", image: "/static/images/cards/image2.jpg", status: "", nicheIds: [], stateId: 0},
+  { id: 3, name: "Influenciador 3", image: "/static/images/cards/image3.jpg", status: "", nicheIds: [], stateId: 0},
+  { id: 4, name: "Influenciador 4", image: "/static/images/cards/image4.jpg", status: "", nicheIds: [], stateId: 0},
+  { id: 5, name: "Influenciador 5", image: "/static/images/cards/image5.jpg", status: "", nicheIds: [], stateId: 0},
+  { id: 6, name: "Influenciador 6", image: "/static/images/cards/image6.jpg", status: "", nicheIds: [], stateId: 0},
+  { id: 7, name: "Influenciador 7", image: "/static/images/cards/image7.jpg", status: "", nicheIds: [], stateId: 0},
+  { id: 8, name: "Influenciador 8", image: "/static/images/cards/image8.jpg", status: "", nicheIds: [], stateId: 0},
+  { id: 9, name: "Influenciador 9", image: "/static/images/cards/image9.jpg", status: "", nicheIds: [], stateId: 0},
 ];
 
 const InfluencerCard: React.FC<{
@@ -70,7 +71,7 @@ const InfluencerCard: React.FC<{
 const HomePageCompany: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [mockInfluencers, setMockInfluencers] = useState(mockDefaultInfluencers);
-  const [page, setPage] = useState(1); // Alterado para iniciar na página 1
+  const [page, setPage] = useState(0); // Alterado para iniciar na página 1
   const [pageSize, setPageSize] = useState(50);
   const [countOfPages, setCountOfPages] = useState(10);
   const [selectedInfluencer, setSelectedInfluencer] = useState<Influencer | null>(null);
@@ -88,15 +89,25 @@ const HomePageCompany: React.FC = () => {
 
   useEffect(() => {
     async function setInfluencersFromDB() {
-      const influencers = await getAllInfluencersPageable(page, pageSize);
-      const count = await getNumbersOfInfluencers();
+      let influencers: any;
+      let count;
+      if(searchTerm != null && !!searchTerm){
+        const res = await getPageableInfluencersByTerm(searchTerm.toUpperCase(), page, pageSize)
+        console.log(res?.data);
+        influencers = await res?.data.content;
+        count = await res?.data.totalElements;
+      }else{
+        influencers = await getAllInfluencersPageable(page, pageSize);
+        count = await getNumbersOfInfluencers();
+      }
+
       if (influencers) {
         setMockInfluencers(influencers);
         setCountOfPages(numberOfPages(count, pageSize));
       }
     }
     setInfluencersFromDB();
-  }, [page, pageSize, contToRefresh]);
+  }, [page, pageSize, contToRefresh, searchTerm]);
 
   const handleViewDetails = (influencer: Influencer) => {
     setSelectedInfluencer(influencer);
@@ -108,12 +119,10 @@ const HomePageCompany: React.FC = () => {
     setDetailModalOpen(false);
   };
 
-  const filteredInfluencers = mockInfluencers.filter((influencer) =>
-    influencer.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredInfluencers = mockInfluencers;
 
   const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
-    setPage(value);
+    setPage(value - 1);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -160,7 +169,7 @@ const HomePageCompany: React.FC = () => {
           <Pagination
             count={countOfPages}
             color="primary"
-            page={page} // Adicionado para sincronizar a paginação
+            page={page+ 1} // Adicionado para sincronizar a paginação
             onChange={handlePageChange}
           />
         </Box>
@@ -175,7 +184,7 @@ const HomePageCompany: React.FC = () => {
           <Pagination
             count={countOfPages}
             color="primary"
-            page={page} // Adicionado para sincronizar a paginação
+            page={page + 1} // Adicionado para sincronizar a paginação
             onChange={handlePageChange}
           />
         </Box>

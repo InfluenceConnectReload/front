@@ -21,6 +21,10 @@ import { getActivesInfluencers } from "../../../services/influence";
 import { useNavigate } from "react-router-dom";
 import AvatarImage from "../../../components/AvatarImage";
 import { Paper } from "@mui/material";
+import { useSessionContext } from "../../../contexts/SessionContext";
+import Company from "../../../types/company";
+import SelectCompany from "../../../components/SelectCompany";
+import { getAllCompanies } from "../../../services/company";
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -105,6 +109,7 @@ const statusOptions = ["Ativo", "Paralisado", "Finalizado"];
 
 export default function RegisterCampaign() {
   const navigate = useNavigate();
+  const sessionCtx = useSessionContext();
 
   const [name, setName] = useState("");
   const [startDate, setStartDate] = useState("");
@@ -115,6 +120,7 @@ export default function RegisterCampaign() {
   const [status, setStatus] = useState("Ativo" as StatusValues);
   const [budget, setBudget] = useState("Orçamento");
   const [selectedInfluencers, setSelectedInfluencers] = useState<Influencer[]>([]);
+  const [selectedCompany, setSelectedCompany] = useState({} as Company);
   const [likes, setLikes] = useState("");
   const [comments, setComments] = useState("");
   const [shares, setShares] = useState("");
@@ -131,6 +137,7 @@ export default function RegisterCampaign() {
     likes: false,
     comments: false,
     shares: false,
+    company: false,
   });
   const [attemptedSubmit, setAttemptedSubmit] = useState(false);
 
@@ -148,15 +155,16 @@ export default function RegisterCampaign() {
       (smName) => socialMediaOrderSwapped[smName]
     ),
     status: statusBackend[status] as StatusBackend,
-    budget: Number(budget.replace("R$", "").replace(",", ".")),
+    budget: Number(budget.replace("R$", "").replace(".","").replace(",", ".")),
     expecLikes: Number(likes),
     expecComments: Number(comments),
     expecSaves: Number(shares),
-    companyId: 1,
+    companyId: selectedCompany.id,
     influencerIds: selectedInfluencers.map((i) => i.id),
     logo: preview ?? "",
   };
   const [activeInfluencers, setActiveInfluencers] = useState([] as Influencer[]);
+  const [companies, setCompanies] = useState([] as Company[]);
 
   useEffect(() => {
     async function setAllInfluencers() {
@@ -164,8 +172,26 @@ export default function RegisterCampaign() {
 
       setActiveInfluencers(infs);
     }
+    async function setAllCompanies() {
+      const comps = (await getAllCompanies()) ?? [];
+
+      setCompanies(comps);
+    }
 
     setAllInfluencers();
+    setAllCompanies();
+
+    if (sessionCtx.userType == "company") {
+      const cData = sessionCtx.userData;
+      const company: Company = {
+        name: cData.name,
+        id: cData.tableId,
+        image: cData.profilePhoto ?? "",
+        profileLogo: cData.profilePhoto,
+        status: "ACTIVE"
+      };
+      setSelectedCompany(company);
+    }
   }, []);
 
   // const theme = useTheme();
@@ -305,6 +331,11 @@ export default function RegisterCampaign() {
     }
   };
 
+  const handleCompaniesChange = (event: SelectChangeEvent<string[]>) => {
+    const value = event.target.value;
+    setSelectedCompany(companies.find((i) => value.includes(i.name)) ?? ({} as Company));
+  };
+
   const validateForm = () => {
     const newErrors = {
       name: name.length < 3 || name.length > 100,
@@ -318,6 +349,7 @@ export default function RegisterCampaign() {
       likes: !likes,
       comments: !comments,
       shares: !shares,
+      company: selectedCompany.id == null,
     };
 
     setErrors(newErrors);
@@ -340,7 +372,7 @@ export default function RegisterCampaign() {
   };
 
   return (
-    <Paper sx={{width: "fit-content", margin: "auto"}}>
+    <Paper sx={{ width: "fit-content", margin: "auto" }}>
       <Box
         component="form"
         sx={{
@@ -533,7 +565,7 @@ export default function RegisterCampaign() {
               value={likes}
               onChange={handleLikesChange}
               error={errors.likes}
-              helperText={errors.likes && "Campo obrigatório"}
+              helperText={(errors.likes && "Campo obrigatório") || "Expectativas"}
             />
           </Grid>
           <Grid item xs={12} sm={4}>
@@ -558,6 +590,18 @@ export default function RegisterCampaign() {
               helperText={errors.shares && "Campo obrigatório"}
             />
           </Grid>
+          {sessionCtx.userType == "adm" ? (
+            <Grid item xs={12} sm={4}>
+              <SelectCompany
+                companies={companies}
+                handleCompaniesChange={handleCompaniesChange}
+                selectedCompany={selectedCompany}
+                error={errors.company}
+              />
+            </Grid>
+          ) : (
+            <></>
+          )}
         </Grid>
         <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
           <Button type="submit" variant="contained" color="primary">
